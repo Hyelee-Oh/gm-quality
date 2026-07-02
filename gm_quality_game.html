@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GM Quality Balance Game</title>
+<style>
+  :root {
+    --black: #0A0A0A;
+    --white: #FFFFFF;
+    --gray-50: #F7F7F5;
+    --gray-100: #EDEDEB;
+    --gray-200: #D6D6D2;
+    --gray-400: #9A9A94;
+    --gray-600: #5C5C58;
+    --gray-800: #2A2A28;
+    --red: #D93B2B;
+    --red-light: #FDF0EE;
+    --orange: #D97B2B;
+    --orange-light: #FDF5EE;
+    --blue: #2B6ED9;
+    --blue-light: #EEF3FD;
+    --green: #2BA85C;
+    --green-light: #EEFAF3;
+    --type-structure: #185FA5;
+    --type-structure-bg: #E6F1FB;
+    --type-function: #534AB7;
+    --type-function-bg: #EEEDFE;
+    --type-appearance: #854F0B;
+    --type-appearance-bg: #FAEEDA;
+    --type-wearability: #0F6E56;
+    --type-wearability-bg: #E1F5EE;
+    --type-safety: #A32D2D;
+    --type-safety-bg: #FCEBEB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--black);
+    color: var(--white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .header {
+    padding: 24px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--gray-400);
+    text-transform: uppercase;
+  }
+  .case-counter {
+    font-size: 11px;
+    color: var(--gray-400);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    padding: 16px 24px 0;
+  }
+  .progress-track {
+    height: 2px;
+    background: var(--gray-800);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--white);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Main content */
+  .main {
+    flex: 1;
+    padding: 32px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Type badge */
+  .type-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+
+  /* Factor tags */
+  .factor-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .factor-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.08);
+    color: var(--gray-400);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .factor-tag.active {
+    background: rgba(255,255,255,0.15);
+    color: var(--white);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  /* Case card */
+  .case-card {
+    background: var(--gray-800);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    flex: 1;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .case-number {
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .case-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--white);
+  }
+
+  /* Judge buttons */
+  .judge-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .judge-btn {
+    padding: 16px 12px;
+    border-radius: 12px;
+    border: 1.5px solid var(--gray-800);
+    background: var(--gray-800);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  .judge-btn .icon { font-size: 22px; }
+  .judge-btn .desc { font-size: 11px; color: var(--gray-400); font-weight: 400; }
+  .judge-btn:hover { border-color: var(--gray-400); }
+  .judge-btn.active-no { border-color: var(--red); background: rgba(217,59,43,0.15); }
+  .judge-btn.active-yes { border-color: var(--green); background: rgba(43,168,92,0.15); }
+
+  /* Sub panel */
+  .sub-panel {
+    background: var(--gray-800);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .sub-panel.visible { display: block; }
+  .sub-title {
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .sub-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .sub-btn {
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--gray-600);
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .sub-btn .icon { font-size: 18px; }
+  .sub-btn .desc { font-size: 10px; color: var(--gray-400); font-weight: 400; }
+  .sub-btn:hover { border-color: var(--gray-400); }
+  .sub-btn.active-always { border-color: var(--red); background: rgba(217,59,43,0.15); }
+  .sub-btn.active-cond-no { border-color: var(--orange); background: rgba(217,123,43,0.15); }
+  .sub-btn.active-cond-yes { border-color: var(--blue); background: rgba(43,110,217,0.15); }
+  .sub-btn.active-full-yes { border-color: var(--green); background: rgba(43,168,92,0.15); }
+
+  /* Star panel */
+  .star-panel {
+    background: var(--gray-800);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .star-panel.visible { display: block; }
+  .star-title {
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .star-row-btns {
+    display: flex;
+    gap: 10px;
+  }
+  .star-btn-item {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    opacity: 0.25;
+    transition: opacity 0.15s;
+    padding: 0;
+    line-height: 1;
+  }
+  .star-btn-item.active { opacity: 1; }
+
+  /* Next button */
+  .next-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    background: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    letter-spacing: 0.02em;
+    transition: opacity 0.15s;
+  }
+  .next-btn.visible { display: block; }
+  .next-btn:hover { opacity: 0.85; }
+
+  /* Name screen */
+  .name-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .name-screen h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .name-screen p {
+    font-size: 14px;
+    color: var(--gray-400);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .name-input {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1.5px solid var(--gray-600);
+    background: var(--gray-800);
+    color: var(--white);
+    font-size: 16px;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .name-input:focus { border-color: var(--white); }
+  .start-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    background: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  .start-btn:hover { opacity: 0.85; }
+
+  /* Complete screen */
+  .complete-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .complete-icon { font-size: 48px; margin-bottom: 24px; }
+  .complete-screen h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .complete-screen p {
+    font-size: 14px;
+    color: var(--gray-400);
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .result-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 32px;
+  }
+  .result-item {
+    background: var(--gray-800);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .result-num {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .result-label {
+    font-size: 11px;
+    color: var(--gray-400);
+    line-height: 1.4;
+  }
+  .result-num.red { color: var(--red); }
+  .result-num.orange { color: var(--orange); }
+  .result-num.blue { color: var(--blue); }
+  .result-num.green { color: var(--green); }
+
+  .screen { display: none; }
+  .screen.active { display: flex; flex-direction: column; flex: 1; }
+</style>
+</head>
+<body>
+
+<div id="screen-name" class="screen active">
+  <div class="name-screen">
+    <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--gray-400);text-transform:uppercase;margin-bottom:32px">GM Quality</div>
+    <h1>품질 밸런스 게임</h1>
+    <p>27가지 실제 상황에 대해<br>용납 가능 여부를 판단해주세요.</p>
+    <input class="name-input" id="name-input" type="text" placeholder="이름을 입력해주세요" maxlength="20" />
+    <button class="start-btn" onclick="startGame()">시작하기</button>
+  </div>
+</div>
+
+<div id="screen-game" class="screen">
+  <div class="header">
+    <div class="brand">GM Quality</div>
+    <div class="case-counter" id="case-counter">1 / 27</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div class="main">
+    <div class="type-badge" id="type-badge"></div>
+    <div class="factor-row" id="factor-row">
+      <div class="factor-tag" id="factor-period">⏱ 짧은 기간</div>
+      <div class="factor-tag" id="factor-frequency">🔄 일반적 빈도</div>
+      <div class="factor-tag" id="factor-recur">↩ 재발</div>
+    </div>
+    <div class="case-card">
+      <div class="case-number" id="case-number">CASE 01</div>
+      <div class="case-text" id="case-text"></div>
+    </div>
+
+    <div class="judge-row">
+      <button class="judge-btn no" id="btn-no" onclick="judge(false)">
+        <span class="icon">✕</span>
+        <span>용납 불가능</span>
+        <span class="desc">문제로 본다</span>
+      </button>
+      <button class="judge-btn yes" id="btn-yes" onclick="judge(true)">
+        <span class="icon">○</span>
+        <span>용납 가능</span>
+        <span class="desc">허용 범위다</span>
+      </button>
+    </div>
+
+    <div class="sub-panel" id="sub-panel">
+      <div class="sub-title" id="sub-title"></div>
+      <div class="sub-row" id="sub-row"></div>
+    </div>
+
+    <div class="star-panel" id="star-panel">
+      <div class="star-title">얼마나 크리티컬한가?</div>
+      <div class="star-row-btns" id="star-row-btns">
+        <button class="star-btn-item" onclick="setStar(1)">★</button>
+        <button class="star-btn-item" onclick="setStar(2)">★</button>
+        <button class="star-btn-item" onclick="setStar(3)">★</button>
+        <button class="star-btn-item" onclick="setStar(4)">★</button>
+        <button class="star-btn-item" onclick="setStar(5)">★</button>
+      </div>
+    </div>
+
+    <button class="next-btn" id="next-btn" onclick="nextCase()">다음 케이스 →</button>
+  </div>
+</div>
+
+<div id="screen-complete" class="screen">
+  <div style="padding:32px 24px;max-width:480px;width:100%;margin:0 auto">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--gray-400);text-transform:uppercase;margin-bottom:16px">GM Quality</div>
+      <div style="font-size:36px;margin-bottom:12px">✓</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:6px" id="complete-name"></h2>
+      <p style="font-size:12px;color:var(--gray-400)" id="complete-time"></p>
+    </div>
+
+    <div class="result-summary" style="margin-bottom:20px">
+      <div class="result-item"><div class="result-num red" id="c-always">0</div><div class="result-label">항상<br>불가능</div></div>
+      <div class="result-item"><div class="result-num orange" id="c-cond-no">0</div><div class="result-label">조건부<br>불가능</div></div>
+      <div class="result-item"><div class="result-num blue" id="c-cond-yes">0</div><div class="result-label">조건부<br>허용</div></div>
+      <div class="result-item"><div class="result-num green" id="c-full-yes">0</div><div class="result-label">완전<br>허용</div></div>
+    </div>
+
+    <div style="margin-bottom:8px;font-size:11px;font-weight:600;letter-spacing:0.08em;color:var(--gray-400);text-transform:uppercase">케이스별 판단</div>
+    <div id="result-detail-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px"></div>
+
+    <p style="font-size:12px;color:var(--gray-600);text-align:center">스크린샷을 찍어서 주최자에게 전달해주세요.</p>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'gm_quality_results';
+
+const typeColors = {
+  '구조 품질': {bg:'var(--type-structure-bg)',color:'var(--type-structure)'},
+  '기능 품질': {bg:'var(--type-function-bg)',color:'var(--type-function)'},
+  '외관 품질': {bg:'var(--type-appearance-bg)',color:'var(--type-appearance)'},
+  '착용 품질': {bg:'var(--type-wearability-bg)',color:'var(--type-wearability)'},
+  '안전/규제 품질': {bg:'var(--type-safety-bg)',color:'var(--type-safety)'},
+};
+
+const cases = [
+  {num:1,type:'구조 품질',factors:{period:true,frequency:false,recur:false},text:"Pocket 컬렉션. 구매 후 2주. 하루 2~3시간 가벼운 외출 시에만 착용. 실내 일상 환경. 나사가 풀려 템플이 흔들림."},
+  {num:2,type:'구조 품질',factors:{period:false,frequency:true,recur:true},text:"Pocket 컬렉션. 구매 후 6개월. 하루 8시간 매일 착용. 폴딩을 하루 수십 회 반복. 나사가 풀려 조여도 며칠 내 재발."},
+  {num:3,type:'구조 품질',factors:{period:false,frequency:false,recur:false},text:"일반 아세테이트 선글라스. 구매 후 1년. 주말에만 착용. 실제 착용 횟수 약 50회 이하. 나사 홈이 마모되어 더 이상 조일 수 없음."},
+  {num:4,type:'구조 품질',factors:{period:true,frequency:true,recur:true},text:"메탈 옵티컬. 구매 후 3개월. 도수 렌즈 장착. 매일 10시간 이상 착용. 나사 풀림 반복으로 매달 매장 방문 필요."},
+  {num:5,type:'구조 품질',factors:{period:true,frequency:false,recur:false},text:"아세테이트 선글라스. 구매 후 1개월. 착용하지 않고 전용 케이스에 보관만 함. 꺼내보니 좌우 비대칭으로 변형."},
+  {num:6,type:'구조 품질',factors:{period:false,frequency:false,recur:false},text:"아세테이트 선글라스. 여름철 주차된 차 안에 2시간 방치 후 프레임 변형."},
+  {num:7,type:'구조 품질',factors:{period:false,frequency:false,recur:true},text:"아세테이트 옵티컬. 매장에서 피팅 후 귀가. 다음날 다시 변형. 3회 반복."},
+  {num:8,type:'기능 품질',factors:{period:true,frequency:false,recur:false},text:"주얼리 컬렉션. 구매 후 1주일. 주 2~3회 특별한 날에만 착용. 일상 실내 환경. 템플 다이아몬드 세팅 탈락."},
+  {num:9,type:'기능 품질',factors:{period:false,frequency:false,recur:true},text:"주얼리 컬렉션. 수리 완료 후 1개월 만에 동일 부위 재탈락."},
+  {num:10,type:'기능 품질',factors:{period:true,frequency:false,recur:false},text:"커머셜 라인. 구매 후 2개월. 매일 착용. 템플 로고 탈락. 기능상 문제는 없음."},
+  {num:11,type:'기능 품질',factors:{period:false,frequency:true,recur:false},text:"커머셜 라인. 구매 후 8개월. 매일 착용. 코기둥 탈락. 탈락 후 코에 금속이 직접 닿아 착용 불가 상태."},
+  {num:12,type:'기능 품질',factors:{period:true,frequency:false,recur:false},text:"클리어 렌즈 선글라스. 구매 후 4개월. 야외에서 주로 착용. 렌즈 황변 발생. 자외선 노출에 의한 자연 변화일 가능성 있음."},
+  {num:13,type:'기능 품질',factors:{period:true,frequency:true,recur:false},text:"커머셜 라인 아세테이트. 구매 후 6개월. 매일 착용. 특별한 충격이나 외력 없이 템플 균열 발생."},
+  {num:14,type:'기능 품질',factors:{period:true,frequency:false,recur:false},text:"F1 컬렉션 사출 프레임. 구매 후 1개월. 하루 4시간 착용. 실수로 바닥에 떨어뜨린 후 경첩 파손. 구매 시 사출 소재 특성에 대한 안내 없었음."},
+  {num:15,type:'기능 품질',factors:{period:true,frequency:false,recur:false},text:"Pocket 컬렉션. 구매 후 3개월. 매일 착용. 전용 케이스 없이 가방 안에 넣고 다니다가 브릿지 균열."},
+  {num:16,type:'외관 품질',factors:{period:false,frequency:false,recur:false},text:"선글라스. 새 제품. 매장 고조도 조명 아래에서만 AR 코팅 균열이 보임. 야외 일반 환경에서는 식별 불가. 기능상 문제 없음."},
+  {num:17,type:'외관 품질',factors:{period:true,frequency:false,recur:false},text:"선글라스. 구매 후 2개월. 하루 4~5시간 야외 착용. 일반 환경에서 육안으로 AR 코팅 균열이 보임. 렌즈 제조사는 불량으로 판정하지 않음."},
+  {num:18,type:'외관 품질',factors:{period:false,frequency:true,recur:false},text:"새 제품. 계산대에서 4개를 꺼냈는데 모두 동일 부위에 미세 스크래치. 타 매장 동일 로트에서도 동일 현상 반복 확인."},
+  {num:19,type:'외관 품질',factors:{period:false,frequency:false,recur:false},text:"새 제품. 고조도 매장 조명 아래에서만 폴리싱 연마흔이 보임. 야외 일반 환경에서는 식별 불가."},
+  {num:20,type:'외관 품질',factors:{period:false,frequency:false,recur:false},text:"매장 DP 제품과 새 재고 간 색상 미세 차이 발생. 양산 편차 범위 내 수준."},
+  {num:21,type:'착용 품질',factors:{period:false,frequency:true,recur:false},text:"BOLD 컬렉션. 하루 6시간 이상 매일 착용. 메탈 템플이 귀를 압박해 착용 후 출혈 발생."},
+  {num:22,type:'착용 품질',factors:{period:false,frequency:true,recur:false},text:"커머셜 라인 메탈 옵티컬. 도수 렌즈 장착. 매일 10시간 착용. 하루 착용 후 두통 반복 호소. 도수 렌즈 무게로 인한 압박 가능성 있음."},
+  {num:23,type:'착용 품질',factors:{period:false,frequency:true,recur:false},text:"아세테이트 선글라스. 코패드 없는 구조. 코가 낮은 아시아 고객. 착용 시 계속 흘러내려 사실상 착용 불가. 피팅으로도 해결 불가."},
+  {num:24,type:'착용 품질',factors:{period:false,frequency:true,recur:false},text:"커머셜 라인. 매일 8시간 착용. 착용 후 콧등에 선명한 자국이 매일 남음. 기능상 문제는 없음."},
+  {num:25,type:'안전/규제 품질',factors:{period:false,frequency:false,recur:false},text:"새 제품. 템플 끝 모서리가 날카롭게 마감됨. 귀 뒤 피부에 닿을 때 불편함. 교환품 2개도 동일."},
+  {num:26,type:'안전/규제 품질',factors:{period:false,frequency:false,recur:false},text:"메탈 프레임. 피부 접촉 부위에서 니켈 용출 의심. 착용 후 귀 뒤와 콧등에 발진 발생. 특정 피부 타입에서만 나타남. 규제 기준치 이하 수준."},
+  {num:27,type:'안전/규제 품질',factors:{period:false,frequency:false,recur:false},text:"새 제품. 템플 끝 내부 마감 처리 미흡. 귀 뒤 피부에 미세한 긁힘 발생. 육안으로는 식별하기 어려운 수준."},
+];
+
+const noSubs = [
+  {id:'always',label:'항상 불가능',desc:'절대 기준',icon:'🚫',activeClass:'active-always'},
+  {id:'cond-no',label:'조건부 불가능',desc:'기준 정의 필요',icon:'⚠️',activeClass:'active-cond-no'},
+];
+const yesSubs = [
+  {id:'cond-yes',label:'조건부 허용',desc:'안내/관리 필요',icon:'📋',activeClass:'active-cond-yes'},
+  {id:'full-yes',label:'완전 허용',desc:'아무 조건 없이 괜찮다',icon:'✓',activeClass:'active-full-yes'},
+];
+
+let cur=0, results=[], curJudge=null, curSub=null, curStar=0, userName='';
+
+function startGame() {
+  const input = document.getElementById('name-input').value.trim();
+  if (!input) { document.getElementById('name-input').focus(); return; }
+  userName = input;
+  showScreen('screen-game');
+  render();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function render() {
+  const c = cases[cur];
+  const pct = Math.round((cur / cases.length) * 100);
+  document.getElementById('case-counter').textContent = (cur+1) + ' / ' + cases.length;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('case-number').textContent = 'CASE ' + String(c.num).padStart(2,'0');
+  document.getElementById('case-text').textContent = c.text;
+  const tc = typeColors[c.type] || {bg:'#F1EFE8',color:'#5F5E5A'};
+  const tb = document.getElementById('type-badge');
+  tb.textContent = c.type;
+  tb.style.background = tc.bg;
+  tb.style.color = tc.color;
+  const f = c.factors || {};
+  document.getElementById('factor-period').className = 'factor-tag' + (f.period ? ' active' : '');
+  document.getElementById('factor-frequency').className = 'factor-tag' + (f.frequency ? ' active' : '');
+  document.getElementById('factor-recur').className = 'factor-tag' + (f.recur ? ' active' : '');
+  document.getElementById('btn-no').className = 'judge-btn no';
+  document.getElementById('btn-yes').className = 'judge-btn yes';
+  document.getElementById('sub-panel').classList.remove('visible');
+  document.getElementById('star-panel').classList.remove('visible');
+  document.getElementById('next-btn').classList.remove('visible');
+  curJudge=null; curSub=null; curStar=0;
+  updateStars(0);
+}
+
+function buildSubBtns(subs) {
+  const row = document.getElementById('sub-row');
+  row.innerHTML = '';
+  subs.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'sub-btn';
+    btn.id = 'sub-' + s.id;
+    btn.innerHTML = `<span class="icon">${s.icon}</span><span>${s.label}</span><span class="desc">${s.desc}</span>`;
+    btn.addEventListener('click', () => setSub(s.id, subs));
+    row.appendChild(btn);
+  });
+}
+
+function judge(ok) {
+  curJudge = ok; curSub = null; curStar = 0;
+  document.getElementById('btn-no').className = 'judge-btn no' + (ok ? '' : ' active-no');
+  document.getElementById('btn-yes').className = 'judge-btn yes' + (ok ? ' active-yes' : '');
+  updateStars(0);
+  const subs = ok ? yesSubs : noSubs;
+  document.getElementById('sub-title').textContent = ok ? '어느 수준으로 허용인가?' : '항상 불가능한가, 조건에 따라 다른가?';
+  buildSubBtns(subs);
+  document.getElementById('sub-panel').classList.add('visible');
+  document.getElementById('star-panel').classList.remove('visible');
+  document.getElementById('next-btn').classList.remove('visible');
+}
+
+function setSub(id, subs) {
+  curSub = id;
+  subs.forEach(s => {
+    const btn = document.getElementById('sub-' + s.id);
+    if (btn) btn.className = 'sub-btn' + (id === s.id ? ' ' + s.activeClass : '');
+  });
+  const needsStar = (id === 'always' || id === 'cond-no');
+  if (needsStar) {
+    document.getElementById('star-panel').classList.add('visible');
+    updateStars(0);
+    document.getElementById('next-btn').classList.remove('visible');
+  } else {
+    document.getElementById('star-panel').classList.remove('visible');
+    document.getElementById('next-btn').classList.add('visible');
+  }
+}
+
+function setStar(n) {
+  curStar = n; updateStars(n);
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+function updateStars(n) {
+  document.querySelectorAll('.star-btn-item').forEach((b,i) => b.classList.toggle('active', i < n));
+}
+
+function nextCase() {
+  if (curJudge === null || !curSub) return;
+  results.push({ caseNum: cases[cur].num, type: cases[cur].type, sub: curSub, star: curStar });
+  cur++;
+  if (cur >= cases.length) finishGame();
+  else render();
+}
+
+function finishGame() {
+  const counts = { always:0, 'cond-no':0, 'cond-yes':0, 'full-yes':0 };
+  results.forEach(r => { if (counts[r.sub] !== undefined) counts[r.sub]++; });
+  document.getElementById('c-always').textContent = counts['always'];
+  document.getElementById('c-cond-no').textContent = counts['cond-no'];
+  document.getElementById('c-cond-yes').textContent = counts['cond-yes'];
+  document.getElementById('c-full-yes').textContent = counts['full-yes'];
+
+  const payload = {
+    name: userName,
+    timestamp: new Date().toISOString(),
+    results: results,
+    counts: counts,
+  };
+
+  // Complete screen
+  document.getElementById('complete-name').textContent = userName + '님의 결과';
+  document.getElementById('complete-time').textContent = new Date().toLocaleString('ko-KR');
+
+  const subLabels = {
+    'always': '항상 불가능',
+    'cond-no': '조건부 불가능',
+    'cond-yes': '조건부 허용',
+    'full-yes': '완전 허용'
+  };
+  const subColors = {
+    'always': 'var(--red)',
+    'cond-no': 'var(--orange)',
+    'cond-yes': 'var(--blue)',
+    'full-yes': 'var(--green)'
+  };
+
+  const list = document.getElementById('result-detail-list');
+  list.innerHTML = '';
+  results.forEach(r => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--gray-800);border-radius:8px;gap:12px';
+    const left = document.createElement('div');
+    left.style.cssText = 'display:flex;align-items:center;gap:8px;flex:1;min-width:0';
+    left.innerHTML = `<span style="font-size:11px;color:var(--gray-400);font-weight:600;flex-shrink:0">${String(r.caseNum).padStart(2,'0')}</span><span style="font-size:12px;color:var(--gray-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.type}</span>`;
+    const right = document.createElement('div');
+    right.style.cssText = `font-size:11px;font-weight:600;color:${subColors[r.sub]};flex-shrink:0`;
+    right.textContent = subLabels[r.sub];
+    if (r.star) {
+      right.textContent += ' ' + '★'.repeat(r.star);
+    }
+    div.appendChild(left);
+    div.appendChild(right);
+    list.appendChild(div);
+  });
+
+  saveResult(payload);
+  showScreen('screen-complete');
+}
+
+async function saveResult(payload) {
+  try {
+    await fetch('https://script.google.com/macros/s/AKfycbxthgdaQHdO849smu29v5Mm9XZuXU6Wd3vGLPZ5JUQM_AdpHJ2KIcithdeAMv34pB-2/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {
+    console.error('저장 실패:', e);
+  }
+}
+
+document.getElementById('name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+</script>
+</body>
+</html>
