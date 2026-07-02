@@ -322,13 +322,25 @@ function prevCase() {
   }
 }
 
-async function saveToSheets(name, caseNum, type, reasons, other) {
+async function saveToSheets(name, allAnswers) {
   try {
+    const payload = {
+      name: name,
+      answers: allAnswers.map(a => {
+        const c = cases.find(c => c.num === a.caseNum);
+        return {
+          caseNum: a.caseNum,
+          type: c ? c.type : '',
+          reasons: a.selectedReasons,
+          other: a.otherText || ''
+        };
+      })
+    };
     await fetch('https://script.google.com/macros/s/AKfycbzmuHzlt-vzB5NbRhFjZhPuwQsY15Ztvel3EPNLOHo9Xf2nRhoeACgNulA3uoyjI0BX/exec', {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, caseNum, type, reasons, other })
+      body: JSON.stringify(payload)
     });
   } catch(e) {
     console.error('저장 실패:', e);
@@ -339,13 +351,8 @@ function showComplete() {
   showScreen('screen-complete');
   document.getElementById('complete-title').textContent = userName + '님의 서베이 결과';
 
-  // Save to Google Sheets — 모든 케이스 저장
-  answers.forEach(a => {
-    const c = cases.find(c => c.num === a.caseNum);
-    if (c) {
-      saveToSheets(userName, a.caseNum, c.type, a.selectedReasons, a.otherText.trim());
-    }
-  });
+  // Save to Google Sheets — 전체를 1개 요청으로 전송
+  saveToSheets(userName, answers);
 
   const list = document.getElementById('result-list');
   list.innerHTML = '';
