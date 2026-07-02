@@ -339,10 +339,10 @@ function showComplete() {
   showScreen('screen-complete');
   document.getElementById('complete-title').textContent = userName + '님의 서베이 결과';
 
-  // Save to Google Sheets
+  // Save to Google Sheets — 모든 케이스 저장
   answers.forEach(a => {
     const c = cases.find(c => c.num === a.caseNum);
-    if (c && (a.selectedReasons.length > 0 || a.otherText.trim())) {
+    if (c) {
       saveToSheets(userName, a.caseNum, c.type, a.selectedReasons, a.otherText.trim());
     }
   });
