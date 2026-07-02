@@ -204,6 +204,8 @@ const reasonOptions = [
   "소재/구조 특성 때문에",
   "브랜드 책임 범위 때문에",
   "개인의 신체적 특성(피부 타입, 얼굴형 등)에 따라 다르게 나타날 수 있는 현상이기 때문에",
+  "개인의 사용 환경, 방법, 습관 등에 따라 나타날 수 있는 현상이기 때문에",
+  "특정 조건에서만 나타나는 현상이기 때문에",
 ];
 
 const typeColors = {
@@ -320,9 +322,30 @@ function prevCase() {
   }
 }
 
+async function saveToSheets(name, caseNum, type, reasons, other) {
+  try {
+    await fetch('https://script.google.com/macros/s/AKfycbzmuHzlt-vzB5NbRhFjZhPuwQsY15Ztvel3EPNLOHo9Xf2nRhoeACgNulA3uoyjI0BX/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, caseNum, type, reasons, other })
+    });
+  } catch(e) {
+    console.error('저장 실패:', e);
+  }
+}
+
 function showComplete() {
   showScreen('screen-complete');
   document.getElementById('complete-title').textContent = userName + '님의 서베이 결과';
+
+  // Save to Google Sheets
+  answers.forEach(a => {
+    const c = cases.find(c => c.num === a.caseNum);
+    if (c && (a.selectedReasons.length > 0 || a.otherText.trim())) {
+      saveToSheets(userName, a.caseNum, c.type, a.selectedReasons, a.otherText.trim());
+    }
+  });
 
   const list = document.getElementById('result-list');
   list.innerHTML = '';
